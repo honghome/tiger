@@ -3,12 +3,14 @@ package slp;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.util.HashSet;
+import java.util.PrimitiveIterator.OfDouble;
 
 import slp.Slp.Exp;
 import slp.Slp.Exp.Eseq;
 import slp.Slp.Exp.Id;
 import slp.Slp.Exp.Num;
 import slp.Slp.Exp.Op;
+import slp.Slp.ExpList.Last;
 import slp.Slp.ExpList;
 import slp.Slp.Stm;
 import util.Bug;
@@ -20,8 +22,22 @@ public class Main {
 	// maximum number of args
 
 	private int maxArgsExp(Exp.T exp) {
-		new Todo();
-		return -1;
+		if (exp instanceof Exp.Id || exp instanceof Exp.Num) {
+			return 0;
+		} else if (exp instanceof Exp.Op) {
+			int n1 = maxArgsExp(((Exp.Op) exp).left);
+			int n2 = maxArgsExp(((Exp.Op) exp).right);
+			
+			return n1 >= n2 ? n1 : n2;
+		} else if (exp instanceof Exp.Eseq){
+			int n1 = maxArgsStm(((Exp.Eseq) exp).stm);
+			int n2 = maxArgsExp(((Exp.Eseq) exp).exp);
+			
+			return n1 >= n2 ? n1 : n2;
+		} else {
+			new Bug();
+			return 0;
+		}
 	}
 
 	private int maxArgsStm(Stm.T stm) {
@@ -32,11 +48,27 @@ public class Main {
 
 			return n1 >= n2 ? n1 : n2;
 		} else if (stm instanceof Stm.Assign) {
-			new Todo();
-			return -1;
+			return maxArgsExp(((Stm.Assign) stm).exp);
 		} else if (stm instanceof Stm.Print) {
-			new Todo();
-			return -1;
+			ExpList.T expList = ((Stm.Print) stm).explist;
+			
+			if (expList instanceof ExpList.Last) {
+				return 1;
+			}
+			
+			int expCnt = 2;
+			ExpList.Pair pair = (ExpList.Pair) expList;
+			
+			/*
+			 * TODO
+			 * is this right ???
+			 */
+			while (pair.list instanceof ExpList.Pair) {
+				pair = (ExpList.Pair) pair.list;
+				expCnt ++;
+			}
+			
+			return expCnt;
 		} else
 			new Bug();
 		return 0;
