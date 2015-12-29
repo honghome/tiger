@@ -95,6 +95,7 @@ public class Lexer {
 				throw new Exception();
 			}
 			token = new Token(Kind.TOKEN_AND, lineNum);
+			break;
 		case '.':
 			token = new Token(Kind.TOKEN_DOT, lineNum);
 			break;
