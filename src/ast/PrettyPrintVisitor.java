@@ -43,11 +43,11 @@ public class PrettyPrintVisitor implements Visitor {
 	}
 
 	private void indent() {
-		this.indentLevel += 2;
+		this.indentLevel += 4;
 	}
 
 	private void unIndent() {
-		this.indentLevel -= 2;
+		this.indentLevel -= 4;
 	}
 
 	private void printSpaces() {
@@ -85,9 +85,12 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(Call e) {
 		e.exp.accept(this);
 		this.say("." + e.id + "(");
+		int idx = 0;
 		for (Exp.T x : e.args) {
+			if (idx > 0)
+				this.say(", ");
+			idx ++;
 			x.accept(this);
-			this.say(", ");
 		}
 		this.say(")");
 		return;
@@ -235,30 +238,42 @@ public class PrettyPrintVisitor implements Visitor {
 	// method
 	@Override
 	public void visit(MethodSingle m) {
-		this.say("  public ");
+		this.printSpaces();
+		this.say("public ");
 		m.retType.accept(this);
 		this.say(" " + m.id + "(");
+		int idx = 0;
 		for (Dec.T d : m.formals) {
 			Dec.DecSingle dec = (Dec.DecSingle) d;
+			if (idx > 0)
+				this.say(", ");
+			idx ++;
 			dec.type.accept(this);
-			this.say(" " + dec.id + ", ");
+			this.say(" " + dec.id);
 		}
 		this.sayln(")");
-		this.sayln("  {");
-
+		this.printSpaces();
+		this.sayln("{");
+		
+		this.indent();
 		for (Dec.T d : m.locals) {
 			Dec.DecSingle dec = (Dec.DecSingle) d;
-			this.say("    ");
+			this.printSpaces();
 			dec.type.accept(this);
-			this.say(" " + dec.id + ";\n");
+			this.sayln(" " + dec.id + ";");
 		}
 		this.sayln("");
 		for (Stm.T s : m.stms)
 			s.accept(this);
-		this.say("    return ");
+		
+		this.printSpaces();
+		this.say("return ");
 		m.retExp.accept(this);
 		this.sayln(";");
-		this.sayln("  }");
+		
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
 		return;
 	}
 
@@ -291,10 +306,15 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(MainClass.MainClassSingle c) {
 		this.sayln("class " + c.id);
 		this.sayln("{");
-		this.sayln("  public static void main (String [] " + c.arg + ")");
-		this.sayln("  {");
+		this.printSpaces();
+		this.sayln("public static void main (String [] " + c.arg + ")");
+		this.printSpaces();
+		this.sayln("{");
+		this.indent();
 		c.stm.accept(this);
-		this.sayln("  }");
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
 		this.sayln("}");
 		return;
 	}
