@@ -5,6 +5,7 @@ import lexer.Token;
 import lexer.Token.Kind;
 import ast.*;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class Parser {
@@ -207,7 +208,7 @@ public class Parser {
 	// AddSubExp -> TimesExp * TimesExp
 	// -> TimesExp
 	private Ast.Exp.T parseAddSubExp() {
-		LinkedList<Ast.Exp.T> times = new LinkedList<Ast.Exp.T>();
+		ArrayList<Ast.Exp.T> times = new ArrayList<Ast.Exp.T>();
 
 		times.add(parseTimesExp());
 		while (current.kind == Kind.TOKEN_TIMES) {
@@ -217,18 +218,27 @@ public class Parser {
 		return cstTimes(times);
 	}
 
-	private Ast.Exp.T cstTimes(LinkedList<Ast.Exp.T> times) {
-		if (times.isEmpty())
+	private Ast.Exp.T cstTimes(ArrayList<Ast.Exp.T> times) {
+		int size = times.size();
+		
+		switch (size) {
+		case 0:
 			return null;
-		return new Ast.Exp.Times(times.removeFirst(), cstTimes(times));
+		case 1:
+			return times.get(0);
+		case 2:
+			return new Ast.Exp.Times(times.get(0), times.get(1));
+		default:
+			return new Ast.Exp.Times(times.remove(0), cstTimes(times));
+		}
 	}
 
 	// LtExp -> AddSubExp + AddSubExp
 	// -> AddSubExp - AddSubExp
 	// -> AddSubExp
 	private Ast.Exp.T parseLtExp() {
-		LinkedList<Ast.Exp.T> addsubs = new LinkedList<Ast.Exp.T>();
-		LinkedList<Boolean> types = new LinkedList<Boolean>();
+		ArrayList<Ast.Exp.T> addsubs = new ArrayList<Ast.Exp.T>();
+		ArrayList<Boolean> types = new ArrayList<Boolean>();
 
 		addsubs.add(parseAddSubExp());
 		while (true) {
@@ -246,24 +256,33 @@ public class Parser {
 		return cstAddSubs(addsubs, types);
 	}
 
-	private Ast.Exp.T cstAddSubs(LinkedList<Ast.Exp.T> addsubs, LinkedList<Boolean> types) {
-		if (addsubs.isEmpty())
-			return null;
-
-		if (types.isEmpty())
-			return new Ast.Exp.Add(addsubs.removeFirst(), null);
+	private Ast.Exp.T cstAddSubs(ArrayList<Ast.Exp.T> addsubs, ArrayList<Boolean> types) {
+		int size = addsubs.size();
 		
-		if (types.getFirst() == true) {
-			return new Ast.Exp.Add(addsubs.removeFirst(), cstAddSubs(addsubs, types));
-		} else {
-			return new Ast.Exp.Sub(addsubs.removeFirst(), cstAddSubs(addsubs, types));
+		switch (size) {
+		case 0:
+			return null;
+		case 1:
+			return addsubs.get(0);
+		case 2:
+			if (types.get(0) == true) {
+				return new Ast.Exp.Add(addsubs.get(0), addsubs.get(1));
+			} else {
+				return new Ast.Exp.Sub(addsubs.get(0), addsubs.get(1));
+			}
+		default:
+			if (types.remove(0) == true) {
+				return new Ast.Exp.Add(addsubs.remove(0), cstAddSubs(addsubs, types));
+			} else {
+				return new Ast.Exp.Sub(addsubs.remove(0), cstAddSubs(addsubs, types));
+			}
 		}
 	}
 
 	// AndExp -> LtExp < LtExp
 	// -> LtExp
 	private Ast.Exp.T parseAndExp() {
-		LinkedList<Ast.Exp.T> lts = new LinkedList<Ast.Exp.T>();
+		ArrayList<Ast.Exp.T> lts = new ArrayList<Ast.Exp.T>();
 
 		lts.add(parseLtExp());
 		while (current.kind == Kind.TOKEN_LT) {
@@ -275,18 +294,26 @@ public class Parser {
 	}
 
 	// LtExp < LtExp < ltExp ...
-	private Ast.Exp.T cstLt(LinkedList<Ast.Exp.T> lts) {
-		if (lts.isEmpty())
+	private Ast.Exp.T cstLt(ArrayList<Ast.Exp.T> lts) {
+		int size = lts.size();
+		
+		switch (size) {
+		case 0:
 			return null;
-
-		return new Ast.Exp.Lt(lts.removeFirst(), cstAnd(lts));
+		case 1:
+			return lts.get(0);
+		case 2:
+			return new Ast.Exp.Lt(lts.get(0), lts.get(1));
+		default:
+			return new Ast.Exp.Lt(lts.remove(0), cstLt(lts));
+		}
 	}
 
 	// Exp -> AndExp && AndExp
 	// -> AndExp
 	private Ast.Exp.T parseExp() {
-		LinkedList<Ast.Exp.T> ands = new LinkedList<Ast.Exp.T>();
-
+		ArrayList<Ast.Exp.T> ands = new ArrayList<Ast.Exp.T>();
+		
 		ands.add(parseAndExp());
 		while (current.kind == Kind.TOKEN_AND) {
 			advance();
@@ -297,11 +324,19 @@ public class Parser {
 	}
 
 	// andExp && AndExp && AndExp ...
-	private Ast.Exp.T cstAnd(LinkedList<Ast.Exp.T> ands) {
-		if (ands.isEmpty())
+	private Ast.Exp.T cstAnd(ArrayList<Ast.Exp.T> ands) {
+		int size = ands.size();
+		
+		switch (size) {
+		case 0:
 			return null;
-
-		return new Ast.Exp.And(ands.removeFirst(), cstAnd(ands));
+		case 1:
+			return ands.get(0);
+		case 2:
+			return new Ast.Exp.And(ands.get(0), ands.get(1));
+		default:
+			return new Ast.Exp.And(ands.remove(0), cstAnd(ands));
+		}
 	}
 
 	// Statement -> { Statement* }
