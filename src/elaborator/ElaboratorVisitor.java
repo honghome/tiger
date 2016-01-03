@@ -15,6 +15,7 @@ import ast.Ast.Exp.Sub;
 import ast.Ast.Exp.This;
 import ast.Ast.Exp.Times;
 import ast.Ast.Exp.True;
+import ast.Ast.Exp.ExpBlock;
 import ast.Ast.MainClass;
 import ast.Ast.Class.ClassSingle;
 import ast.Ast.Dec;
@@ -193,6 +194,11 @@ public class ElaboratorVisitor implements ast.Visitor {
 	public void visit(True e) {
 	}
 
+	@Override
+	public void visit(ExpBlock e) {
+		
+	}
+	
 	// statements
 	@Override
 	public void visit(Assign s) {

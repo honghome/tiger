@@ -7,6 +7,7 @@ import ast.Ast.Exp.Add;
 import ast.Ast.Exp.And;
 import ast.Ast.Exp.ArraySelect;
 import ast.Ast.Exp.Call;
+import ast.Ast.Exp.ExpBlock;
 import ast.Ast.Exp.False;
 import ast.Ast.Exp.Id;
 import ast.Ast.Exp.Length;
@@ -155,6 +156,7 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(Not e) {
 		this.say("!");
+		e.exp.accept(this);
 		return;
 	}
 
@@ -191,6 +193,14 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say("true");
 		return;
 	}
+	
+	@Override
+	public void visit(ExpBlock e) {
+		this.say("(");
+		e.exp.accept(this);
+		this.say(")");
+		return;
+	}
 
 	// statements
 	@Override
@@ -215,7 +225,9 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(Block s) {
-		new util.Todo();
+		for(Ast.Stm.T stm : s.stms) {
+			stm.accept(this);
+		}
 		return;
 	}
 
@@ -228,7 +240,6 @@ public class PrettyPrintVisitor implements Visitor {
 		this.indent();
 		s.thenn.accept(this);
 		this.unIndent();
-		this.sayln("");
 		this.printSpaces();
 		this.sayln("else");
 		this.indent();
@@ -269,7 +280,7 @@ public class PrettyPrintVisitor implements Visitor {
 	// type
 	@Override
 	public void visit(Boolean t) {
-		this.say("bool");
+		this.say("boolean");
 	}
 
 	@Override
@@ -348,7 +359,7 @@ public class PrettyPrintVisitor implements Visitor {
 
 		for (Dec.T d : c.decs) {
 			Dec.DecSingle dec = (Dec.DecSingle) d;
-			this.say("  ");
+			this.printSpaces();
 			dec.type.accept(this);
 			this.say(" ");
 			this.sayln(dec.id + ";");

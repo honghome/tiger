@@ -1,0 +1,7 @@
+1. 在Ast.java 中增加关于推断是AtomExp -> (Exp) 的类，并且增加相应的parser 和 prettyprint
+如果缺少了这个推导式，那么表达式的优先级将会不正确
+
+2. 在Parser.java 中，在生成Ast的过程中，一些特殊的ast元素需要根据实际情况来决定是否生成对应的ast元素类
+如AndExp LtExp AddSubExp TimesExp 等
+
+

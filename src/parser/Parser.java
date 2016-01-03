@@ -63,16 +63,16 @@ public class Parser {
 	// ->
 	// ExpRest -> , Exp
 	private LinkedList<Ast.Exp.T> parseExpList() {
-		if (current.kind == Kind.TOKEN_RPAREN)
-			return null;
-
 		LinkedList<Ast.Exp.T> exps = new LinkedList<Ast.Exp.T>();
-		exps.add(parseExp());
-		while (current.kind == Kind.TOKEN_COMMER) {
-			advance();
-			exps.add(parseExp());
-		}
 
+		if (current.kind != Kind.TOKEN_RPAREN) {
+			exps.add(parseExp());
+			while (current.kind == Kind.TOKEN_COMMER) {
+				advance();
+				exps.add(parseExp());
+			}
+		}
+		
 		return exps;
 	}
 
@@ -91,7 +91,7 @@ public class Parser {
 		switch (current.kind) {
 		case TOKEN_LPAREN:
 			advance();
-			exp = parseExp();
+			exp = new Ast.Exp.ExpBlock(parseExp());
 			eatToken(Kind.TOKEN_RPAREN);
 
 			return exp;
@@ -201,7 +201,7 @@ public class Parser {
 		if (cnt % 2 == 1) {
 			return new Ast.Exp.Not(parseNotExp());
 		} else {
-			return new Ast.Exp.Not(new Ast.Exp.Not(parseNotExp()));
+			return parseNotExp();
 		}
 	}
 
