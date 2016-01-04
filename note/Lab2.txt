@@ -1,7 +1,176 @@
-1. 在Ast.java 中增加关于推断是AtomExp -> (Exp) 的类，并且增加相应的parser 和 prettyprint
+----------------------------------------------------------------------------------------------------------------------
+
+Exercise 4. The current implementation of the pretty printer in the file src.ast.PrettyPrintVisitor.java are incomplete, i.e., some methods come with empty bodies. Complete those methods by filling in the missing code.
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. ex4 完成preetyprint，这里需要理解访问者模式的工作方式。所有能够被访问的对象必须实现接口Acceptable 的 accept方法：
+
+	public interface Acceptable {
+		public void accept(Visitor v);
+	}
+
+而类Visitor则规定了针对每个可访问对象的访问动作：
+
+	public interface Visitor {
+		// expressions
+		public void visit(Add e);
+
+		public void visit(And e);
+
+		public void visit(ArraySelect e);
+
+		public void visit(Call e);
+
+		public void visit(False e);
+
+		...
+	}
+
+所有能背访问的对象用如下的方式实现accept方法，只需要负责调用visit方法，并且以自己作为参数：
+
+	public static class Type {
+		public static abstract class T implements ast.Acceptable {
+			// boolean: -1
+			// int: 0
+			// int[]: 1
+			// class: 2
+			// Such that one can easily tell who is who
+			public abstract int getNum();
+		}
+
+		// boolean
+		public static class Boolean extends T {
+			...
+			@Override
+			public void accept(Visitor v) {
+				v.visit(this);
+			}
+			...
+		}
+
+		// class
+		public static class ClassType extends T {
+			public String id;
+			...
+			@Override
+			public void accept(Visitor v) {
+				v.visit(this);
+			}
+			...
+		}
+
+		// int
+		public static class Int extends T {
+			...
+			@Override
+			public void accept(Visitor v) {
+				v.visit(this);
+			}
+			...
+		}
+
+
+PrettyPrintVisitor类用来打印还原source code，所以它实现借口interface，并且作为AST对象的accept方法的参数
+
+----------------------------------------------------------------------------------------------------------------------
+
+Exercise 5. Modfity the parser src.parser.Parser.java to add semantic actions to each parsing method. There is hooking code in src.Main.java which will call the new parser and to pretty print the parsing result (abstract syntax tree).
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. 修改Parser，在完成递归下降算法的过程中，生成AST：
+1）生成的规则是按照特定语言的推导式进行的，需要注意的是，在推导特定推导式时，并不一定会生成对应的元素。比如在推导与运算、比较运算、算数运算等的过程中，并不一定会生成相应的对象，在缺少对应的运算符时，应该返回下一级的对象作为结果，以比较和与运算为例，注意“case 1” 的情况：
+
+	// AndExp -> LtExp < LtExp
+	// -> LtExp
+	private Ast.Exp.T parseAndExp() {
+		ArrayList<Ast.Exp.T> lts = new ArrayList<Ast.Exp.T>();
+
+		lts.add(parseLtExp());
+		while (current.kind == Kind.TOKEN_LT) {
+			advance();
+			lts.add(parseLtExp());
+		}
+
+		return cstLt(lts);
+	}
+
+	// LtExp < LtExp < ltExp ...
+	private Ast.Exp.T cstLt(ArrayList<Ast.Exp.T> lts) {
+		int size = lts.size();
+		
+		switch (size) {
+		case 0:
+			return null;
+		case 1:
+			return lts.get(0);
+		case 2:
+			return new Ast.Exp.Lt(lts.get(0), lts.get(1));
+		default:
+			return new Ast.Exp.Lt(lts.remove(0), cstLt(lts));
+		}
+	}
+
+	// Exp -> AndExp && AndExp
+	// -> AndExp
+	private Ast.Exp.T parseExp() {
+		ArrayList<Ast.Exp.T> ands = new ArrayList<Ast.Exp.T>();
+		
+		ands.add(parseAndExp());
+		while (current.kind == Kind.TOKEN_AND) {
+			advance();
+			ands.add(parseAndExp());
+		}
+
+		return cstAnd(ands);
+	}
+
+	// andExp && AndExp && AndExp ...
+	private Ast.Exp.T cstAnd(ArrayList<Ast.Exp.T> ands) {
+		int size = ands.size();
+		
+		switch (size) {
+		case 0:
+			return null;
+		case 1:
+			return ands.get(0);
+		case 2:
+			return new Ast.Exp.And(ands.get(0), ands.get(1));
+		default:
+			return new Ast.Exp.And(ands.remove(0), cstAnd(ands));
+		}
+	}
+
+
+2）在Ast.java 中增加关于推断是AtomExp -> (Exp) 的类，并且增加相应的parser 和 prettyprint
 如果缺少了这个推导式，那么表达式的优先级将会不正确
 
-2. 在Parser.java 中，在生成Ast的过程中，一些特殊的ast元素需要根据实际情况来决定是否生成对应的ast元素类
-如AndExp LtExp AddSubExp TimesExp 等
+
+----------------------------------------------------------------------------------------------------------------------
+Symbol Tables
+
+Exercise  6. Read the code in src.elaborator.ClassTable.java for the data structure defining the class table. And read the code in src.elaborator.MethodTable.java for the data structure defining the method table. Draw figures about the organization of these tables.
+
+It's often the case that one need to dump the content the class table or method table after they have been created, to make sure that they contain everything one need. Now finish the methods dump() in both the two table classes for this purpose. Make sure that your Tiger compiler compiles with:
+
+  $ java -cp bin Tiger -elab classTable -elab methodTable <inputFile>
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. 给出了class 和 method 的基本符号表， 要求实现classTable 和 methodTable的dump方法，目的是打印信息，方便查看
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------
+Symbol Tables
+
+Exercise 7. Finish the code in the elaborator src.elaborator.ElaboratorVisitor.java by filling the methods which have empty bodies. You may want to refer to the Java specification when necessary. But pay special attention to the minor differences between Java and MiniJava, say overloading is not allowed in MiniJava.
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+
 
 

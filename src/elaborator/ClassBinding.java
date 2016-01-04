@@ -45,9 +45,9 @@ public class ClassBinding {
 			System.out.println(this.extendss);
 		else
 			System.out.println("<>");
-		System.out.println("\nfields:\n  ");
+		System.out.println("\nfields:\n  " + "size: " + this.fields.size());
 		System.out.println(fields.toString());
-		System.out.println("\nmethods:\n  ");
+		System.out.println("\nmethods:\n  " + "size: " + this.methods.size());
 		System.out.println(methods.toString());
 
 		return "";
