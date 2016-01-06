@@ -164,13 +164,46 @@ It's often the case that one need to dump the content the class table or method 
 
 
 ----------------------------------------------------------------------------------------------------------------------
-Symbol Tables
+Elaboration Rules
+The elaboration (type checking) is a post-order traversal of the abstract syntax tree. For sub-trees, the elaborator returns the type of that sub-tree; and for root-node, the elaborator compares the types returned from the sub-trees and guarantee the sub-tree types can be combined in some proper way
 
 Exercise 7. Finish the code in the elaborator src.elaborator.ElaboratorVisitor.java by filling the methods which have empty bodies. You may want to refer to the Java specification when necessary. But pay special attention to the minor differences between Java and MiniJava, say overloading is not allowed in MiniJava.
 
 ----------------------------------------------------------------------------------------------------------------------
 
+1. 该联系的主要工作是做类型推导，主要是检查表达式的类型是否匹配
+
+
+MainClass.MainClassSingle c : 推导 c.stm
+
+Class.ClassSingle c : c.methods
+
+Method.MethodSingle m : m.stms, m.retExp
+
+Dec.DecSingle d : 
 
 
 
+While / If  s : s.contiton 的类型为boolean
 
+Print s : s.exp 的类型为 int
+
+AssignArray ArraySelect s : s.index、s.exp 为int，s.id存在并且为int
+
+>Assign s : s.id 存在, 并且 s.id s.exp 的类型一致
+
+Not s : 
+
+Add Sub s : s.left , s.right 必须为int    this.type为int
+
+NewObject NewIntArray s :  tihs.type为对应的type
+
+Lt s : s.left、s.right类型相同， this.type为bool
+
+Length s : s.array 为 int, this.type 为int
+
+Id s : 查找s是否在类中或方法中，并且更新到this.type
+
+True False s : this.type 为bool
+
+And s : s.left s.right this.type 为bool

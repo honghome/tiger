@@ -61,14 +61,34 @@ public class ElaboratorVisitor implements ast.Visitor {
 	// expressions
 	@Override
 	public void visit(Add e) {
+		e.left.accept(this);
+		Type.T leftty = this.type;
+		e.right.accept(this);
+		if (!this.type.toString().equals(leftty.toString()))
+			error();
+		this.type = new Type.Int();
 	}
 
 	@Override
 	public void visit(And e) {
+		e.left.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error();
+		e.right.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error();
+		this.type = new Type.Boolean();
 	}
 
 	@Override
 	public void visit(ArraySelect e) {
+		e.array.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error();
+		e.index.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error();
+		this.type = new Type.Int();
 	}
 
 	@Override
@@ -106,6 +126,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(False e) {
+		this.type = new Type.Boolean();
 	}
 
 	@Override
@@ -129,6 +150,10 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(Length e) {
+		e.array.accept(this);
+		if (!this.type.toString().equals("@int[]"))
+			error();
+		this.type = new Type.Int();
 	}
 
 	@Override
@@ -144,6 +169,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(NewIntArray e) {
+		this.type = new Type.IntArray();
 	}
 
 	@Override
@@ -154,6 +180,9 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(Not e) {
+		e.exp.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error();
 	}
 
 	@Override
@@ -192,13 +221,14 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(True e) {
+		this.type = new Type.Boolean();
 	}
 
 	@Override
 	public void visit(ExpBlock e) {
-		
+		e.exp.accept(this);
 	}
-	
+
 	// statements
 	@Override
 	public void visit(Assign s) {
@@ -217,10 +247,23 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(AssignArray s) {
+		s.index.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error();
+
+		s.exp.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error();
+		new Id(s.id).accept(this);
+		if (!this.type.toString().equals("@int"))
+			error();
+		this.type = new Type.Int();
 	}
 
 	@Override
 	public void visit(Block s) {
+		for (Stm.T stm : s.stms)
+			stm.accept(this);
 	}
 
 	@Override
@@ -243,11 +286,16 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(While s) {
+		s.condition.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error();
+		s.body.accept(this);
 	}
 
 	// type
 	@Override
 	public void visit(Type.Boolean t) {
+		this.type = new Type.Boolean();
 	}
 
 	@Override
@@ -256,7 +304,6 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(Type.Int t) {
-		System.out.println("aaaa");
 	}
 
 	@Override
