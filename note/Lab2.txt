@@ -174,36 +174,57 @@ Exercise 7. Finish the code in the elaborator src.elaborator.ElaboratorVisitor.j
 1. 该联系的主要工作是做类型推导，主要是检查表达式的类型是否匹配
 
 
-MainClass.MainClassSingle c : 推导 c.stm
+	MainClass.MainClassSingle c: 推导 c.stm
 
-Class.ClassSingle c : c.methods
+	Class.ClassSingle c: c.methods
 
-Method.MethodSingle m : m.stms, m.retExp
+	Method.MethodSingle m: m.stms, m.retExp
 
-Dec.DecSingle d : 
+	Dec.DecSingle d: 定义在类型推导中不会被访问到
+
+
+	//stm
+	While / If s: s.contiton 的类型为boolean
+
+	Print s: s.exp 的类型为 int
+
+	AssignArray ArraySelect s: s.index、s.exp 为int，s.id存在并且为int[]
+
+	Assign s: s.id 存在, 并且 s.id s.exp 的类型一致,  如果是ClassType需要考虑继承关系
 
 
 
-While / If  s : s.contiton 的类型为boolean
+	//exp
+	Not s: s.exp 为bool
+		
+	And s: s.left s.right this.type 为bool
 
-Print s : s.exp 的类型为 int
+	Lt s: s.left、s.right类型相同， this.type为bool
 
-AssignArray ArraySelect s : s.index、s.exp 为int，s.id存在并且为int
+	Add Sub Times s: s.left、s.right 必须为int； this.type为int
 
->Assign s : s.id 存在, 并且 s.id s.exp 的类型一致
+	NewObject NewIntArray s:  tihs.type为对应的type
 
-Not s : 
+	ArraySelect s: s.array 为 int[]; s.index 为 int
 
-Add Sub s : s.left , s.right 必须为int    this.type为int
+	True False Num s: this.type 为bool
 
-NewObject NewIntArray s :  tihs.type为对应的type
+	Length s: s.array 为 int, this.type 为int
 
-Lt s : s.left、s.right类型相同， this.type为bool
+	Id s: 查找s是否在类中或方法中，并且更新到this.type
+	
+	Call c:
+		1. 必须为类方法调用
+		2. 检查方法的签名和调用传入的参数是否一致
+			基本的类型有 Boolean Int IntArray ClassType， 其中ClassType的检查需要考虑继承关系
+		3. 更新返回值和参数列表的类型到C中， 并且this.type为范围值的类型
 
-Length s : s.array 为 int, this.type 为int
 
-Id s : 查找s是否在类中或方法中，并且更新到this.type
+	// type
+	type 不会被visit到
 
-True False s : this.type 为bool
+	// dec
+	dec 不会被visit到
 
-And s : s.left s.right this.type 为bool
+
+2. 测试，在注释掉MethodTable、ClassTable的重复定义检查之后，通过测试

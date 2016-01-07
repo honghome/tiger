@@ -19,7 +19,6 @@ import ast.Ast.Exp.ExpBlock;
 import ast.Ast.MainClass;
 import ast.Ast.Class.ClassSingle;
 import ast.Ast.Dec;
-import ast.Ast.Dec.DecSingle;
 import ast.Ast.Exp;
 import ast.Ast.Exp.Add;
 import ast.Ast.Exp.And;
@@ -53,8 +52,28 @@ public class ElaboratorVisitor implements ast.Visitor {
 	}
 
 	private void error(String errorMsg) {
-		System.out.println(errorMsg);
+		System.out.println("Error: " + errorMsg);
 		System.exit(1);
+	}
+
+	// check whether the classType is match
+	private boolean isClassMatch(String father, String child) {
+		while (child != null && !child.equals(father)) {
+			child = this.classTable.get(child).extendss;
+		}
+
+		return child != null && child.equals(father);
+	}
+
+	// check whether the classType is match
+	private boolean isClassMatch(Type.T father, Type.T child) {
+		if (father instanceof Type.ClassType && child instanceof Type.ClassType) {
+			String fatherName = ((Type.ClassType) father).id;
+			String childName = ((Type.ClassType) child).id;
+
+			return isClassMatch(fatherName, childName);
+		}
+		return false;
 	}
 
 	// /////////////////////////////////////////////////////
@@ -118,16 +137,8 @@ public class ElaboratorVisitor implements ast.Visitor {
 				;
 			else {
 				// check class type
-				if (arg instanceof Type.ClassType && dec.type instanceof Type.ClassType) {
-					String father = ((Type.ClassType) dec.type).id;
-					String child = ((Type.ClassType) arg).id;
-
-					while (child != null && !child.equals(father)) {
-						child = this.classTable.get(child).extendss;
-					}
-
-					if (child != null && child.equals(father))
-						continue;
+				if (isClassMatch(dec.type, arg)) {
+					continue;
 				}
 				error("Call exp : args type error" + "\n\tdec.id[dec.type] : "
 						+ String.format("%s[%s]", dec.id, dec.type.toString()) + "\n\targs.type : "
@@ -258,8 +269,11 @@ public class ElaboratorVisitor implements ast.Visitor {
 			error("Assign Stm : id not find");
 		s.exp.accept(this);
 		s.type = type;
-		if (!this.type.toString().equals(type.toString()))
-			error("Assign Stm : type not math");
+		if (!this.type.toString().equals(type.toString())) {
+			if (!isClassMatch(type, this.type))
+				error("Assign Stm : type not math");
+		}
+
 		return;
 	}
 
