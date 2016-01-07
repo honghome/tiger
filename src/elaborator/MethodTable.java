@@ -41,7 +41,8 @@ public class MethodTable {
 	}
 
 	public void dump() {
-		new Todo();
+		System.out.println(">>method parameter and variable:");
+		System.out.println(this.table.toString());
 	}
 
 	@Override

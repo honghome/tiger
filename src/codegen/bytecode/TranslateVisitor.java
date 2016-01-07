@@ -3,6 +3,7 @@ package codegen.bytecode;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
+import ast.Ast.Exp.ExpBlock;
 import codegen.bytecode.Ast.Class;
 import codegen.bytecode.Ast.Class.ClassSingle;
 import codegen.bytecode.Ast.Dec;
@@ -161,7 +162,12 @@ public class TranslateVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.Ast.Exp.True e) {
 	}
-
+	
+	@Override
+	public void visit(ExpBlock e) {
+		
+	}
+	
 	// ///////////////////////////////////////////////////
 	// statements
 	@Override

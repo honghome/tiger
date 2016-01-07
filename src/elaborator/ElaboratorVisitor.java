@@ -22,6 +22,7 @@ import ast.Ast.Exp.Sub;
 import ast.Ast.Exp.This;
 import ast.Ast.Exp.Times;
 import ast.Ast.Exp.True;
+import ast.Ast.Exp.ExpBlock;
 import ast.Ast.MainClass;
 import ast.Ast.Method;
 import ast.Ast.Method.MethodSingle;
@@ -50,23 +51,63 @@ public class ElaboratorVisitor implements ast.Visitor {
 		this.type = null;
 	}
 
-	private void error() {
-		System.out.println("type mismatch");
+	private void error(String errorMsg) {
+		System.out.println("Error: " + errorMsg);
 		System.exit(1);
+	}
+
+	// check whether the classType is match
+	private boolean isClassMatch(String father, String child) {
+		while (child != null && !child.equals(father)) {
+			child = this.classTable.get(child).extendss;
+		}
+
+		return child != null && child.equals(father);
+	}
+
+	// check whether the classType is match
+	private boolean isClassMatch(Type.T father, Type.T child) {
+		if (father instanceof Type.ClassType && child instanceof Type.ClassType) {
+			String fatherName = ((Type.ClassType) father).id;
+			String childName = ((Type.ClassType) child).id;
+
+			return isClassMatch(fatherName, childName);
+		}
+		return false;
 	}
 
 	// /////////////////////////////////////////////////////
 	// expressions
 	@Override
 	public void visit(Add e) {
+		e.left.accept(this);
+		Type.T leftty = this.type;
+		e.right.accept(this);
+		if (!this.type.toString().equals(leftty.toString()))
+			error("Add Exp : type mismatch");
+		this.type = new Type.Int();
 	}
 
 	@Override
 	public void visit(And e) {
+		e.left.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error("And Exp : left exp isn't boolean");
+		e.right.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error("And Exp : right exp isnt' boolean");
+		this.type = new Type.Boolean();
 	}
 
 	@Override
 	public void visit(ArraySelect e) {
+		e.array.accept(this);
+		if (!this.type.toString().equals("@int[]"))
+			error("ArraySelect Exp : array isn't int but " + this.type.toString());
+		e.index.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error("ArraySelect Exp : index isn't int");
+		this.type = new Type.Int();
 	}
 
 	@Override
@@ -80,7 +121,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 			ty = (ClassType) leftty;
 			e.type = ty.id;
 		} else
-			error();
+			error("Call exp : e.exp isn't ClassType");
 		MethodType mty = this.classTable.getm(ty.id, e.id);
 
 		java.util.LinkedList<Type.T> declaredArgTypes = new java.util.LinkedList<Type.T>();
@@ -93,7 +134,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 			argsty.addLast(this.type);
 		}
 		if (declaredArgTypes.size() != argsty.size())
-			error();
+			error("Call exp : args size error");
 		// For now, the following code only checks that
 		// the types for actual and formal arguments should
 		// be the same. However, in MiniJava, the actual type
@@ -107,7 +148,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 			if (dec.type.toString().equals(argsty.get(i).toString()))
 				;
 			else
-				error();
+				error("...");
 		}
 		this.type = mty.retType;
 		// the following two types should be the declared types.
@@ -118,6 +159,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(False e) {
+		this.type = new Type.Boolean();
 	}
 
 	@Override
@@ -132,7 +174,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 			e.isField = true;
 		}
 		if (type == null)
-			error();
+			error("Id Exp : id not find");
 		this.type = type;
 		// record this type on this node for future use.
 		e.type = type;
@@ -141,6 +183,10 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(Length e) {
+		e.array.accept(this);
+		if (!this.type.toString().equals("@int[]"))
+			error("Length Exp : array isn't int[]");
+		this.type = new Type.Int();
 	}
 
 	@Override
@@ -149,13 +195,14 @@ public class ElaboratorVisitor implements ast.Visitor {
 		Type.T ty = this.type;
 		e.right.accept(this);
 		if (!this.type.toString().equals(ty.toString()))
-			error();
+			error("Lt Exp : left and right exp isn't match");
 		this.type = new Type.Boolean();
 		return;
 	}
 
 	@Override
 	public void visit(NewIntArray e) {
+		this.type = new Type.IntArray();
 	}
 
 	@Override
@@ -166,6 +213,9 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(Not e) {
+		e.exp.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error("Not Exp : exp not bool");
 	}
 
 	@Override
@@ -180,7 +230,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 		Type.T leftty = this.type;
 		e.right.accept(this);
 		if (!this.type.toString().equals(leftty.toString()))
-			error();
+			error("Sub Exp : left and righ exp not match");
 		this.type = new Type.Int();
 		return;
 	}
@@ -197,13 +247,19 @@ public class ElaboratorVisitor implements ast.Visitor {
 		Type.T leftty = this.type;
 		e.right.accept(this);
 		if (!this.type.toString().equals(leftty.toString()))
-			error();
+			error("Times Exp : left and right exp not match");
 		this.type = new Type.Int();
 		return;
 	}
 
 	@Override
 	public void visit(True e) {
+		this.type = new Type.Boolean();
+	}
+
+	@Override
+	public void visit(ExpBlock e) {
+		e.exp.accept(this);
 	}
 
 	// statements
@@ -215,26 +271,43 @@ public class ElaboratorVisitor implements ast.Visitor {
 		if (type == null)
 			type = this.classTable.get(this.currentClass, s.id);
 		if (type == null)
-			error();
+			error("Assign Stm : id not find");
 		s.exp.accept(this);
 		s.type = type;
-		this.type.toString().equals(type.toString());
+		if (!this.type.toString().equals(type.toString())) {
+			if (!isClassMatch(type, this.type))
+				error("Assign Stm : type not math");
+		}
+
 		return;
 	}
 
 	@Override
 	public void visit(AssignArray s) {
+		s.index.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error("AssignArray Stm : index isn't int");
+
+		s.exp.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error("AssignArray Stm : exp isn't int");
+		new Id(s.id).accept(this);
+		if (!this.type.toString().equals("@int[]"))
+			error("AssignArray Stm : id isn't int but " + this.type.toString());
+		this.type = new Type.Int();
 	}
 
 	@Override
 	public void visit(Block s) {
+		for (Stm.T stm : s.stms)
+			stm.accept(this);
 	}
 
 	@Override
 	public void visit(If s) {
 		s.condition.accept(this);
 		if (!this.type.toString().equals("@boolean"))
-			error();
+			error("If Stm : condition isn't bool");
 		s.thenn.accept(this);
 		s.elsee.accept(this);
 		return;
@@ -244,35 +317,43 @@ public class ElaboratorVisitor implements ast.Visitor {
 	public void visit(Print s) {
 		s.exp.accept(this);
 		if (!this.type.toString().equals("@int"))
-			error();
+			error("Print Stm : exp isn't int");
 		return;
 	}
 
 	@Override
 	public void visit(While s) {
+		s.condition.accept(this);
+		if (!this.type.toString().equals("@boolean"))
+			error("While Stm : condition isn't bool");
+		s.body.accept(this);
 	}
 
 	// type
 	@Override
 	public void visit(Type.Boolean t) {
+		error("what fuck : in visit Type.Boolean");
 	}
 
 	@Override
 	public void visit(Type.ClassType t) {
+		error("what fuck : in visit Type.ClassType");
 	}
 
 	@Override
 	public void visit(Type.Int t) {
-		System.out.println("aaaa");
+		error("what fuck : in visit Type.Int");
 	}
 
 	@Override
 	public void visit(Type.IntArray t) {
+		error("what fuck : in visit Type.IntArray");
 	}
 
 	// dec
 	@Override
 	public void visit(Dec.DecSingle d) {
+		error("what fuck : in visit Dec.DecSingle");
 	}
 
 	// method

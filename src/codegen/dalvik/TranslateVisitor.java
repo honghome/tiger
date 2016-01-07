@@ -2,6 +2,7 @@ package codegen.dalvik;
 
 import java.util.LinkedList;
 
+import ast.Ast.Exp.ExpBlock;
 import codegen.dalvik.Ast.Class;
 import codegen.dalvik.Ast.Class.ClassSingle;
 import codegen.dalvik.Ast.Dec;
@@ -202,7 +203,12 @@ public class TranslateVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.Ast.Exp.True e) {
 	}
-
+	
+	@Override
+	public void visit(ExpBlock e) {
+		
+	}
+	
 	// ///////////////////////////////////////////////////
 	// statements
 	@Override

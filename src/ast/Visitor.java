@@ -6,6 +6,7 @@ import ast.Ast.Exp.Add;
 import ast.Ast.Exp.And;
 import ast.Ast.Exp.ArraySelect;
 import ast.Ast.Exp.Call;
+import ast.Ast.Exp.ExpBlock;
 import ast.Ast.Exp.False;
 import ast.Ast.Exp.Id;
 import ast.Ast.Exp.Length;
@@ -18,6 +19,7 @@ import ast.Ast.Exp.Sub;
 import ast.Ast.Exp.This;
 import ast.Ast.Exp.Times;
 import ast.Ast.Exp.True;
+import ast.Ast.Exp.ExpBlock;
 import ast.Ast.MainClass.MainClassSingle;
 import ast.Ast.Method.MethodSingle;
 import ast.Ast.Stm.Assign;
@@ -64,6 +66,8 @@ public interface Visitor {
 	public void visit(Times e);
 
 	public void visit(True e);
+	
+	public void visit(ExpBlock e);
 
 	// statements
 	public void visit(Assign s);

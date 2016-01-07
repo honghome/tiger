@@ -42,7 +42,7 @@ public class Fac {
 			new Print(new Call(new NewObject("Fac"), "ComputeFac", new util.Flist<Exp.T>().list(new Num(10)))));
 
 	// // class "Fac"
-	static ast.Ast.Class.T fac = new ast.Ast.Class.ClassSingle("F", null,
+	static ast.Ast.Class.T fac = new ast.Ast.Class.ClassSingle("Fac", null,
 			new util.Flist<Dec.T>()
 					.list(),
 			new util.Flist<Method.T>()

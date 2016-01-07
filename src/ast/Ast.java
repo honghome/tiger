@@ -393,6 +393,20 @@ public class Ast {
 				return;
 			}
 		}
+		
+		public static class ExpBlock extends T {
+			public T exp;
+			
+			public ExpBlock(T exp) {
+				this.exp =  exp;
+			}
+			
+			@Override
+			public void accept(ast.Visitor v) {
+				v.visit(this);
+				return;
+			}
+		}
 
 	}// end of expression
 

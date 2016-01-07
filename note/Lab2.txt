@@ -1,0 +1,266 @@
+----------------------------------------------------------------------------------------------------------------------
+
+Exercise 4. The current implementation of the pretty printer in the file src.ast.PrettyPrintVisitor.java are incomplete, i.e., some methods come with empty bodies. Complete those methods by filling in the missing code.
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. ex4 完成preetyprint，这里需要理解访问者模式的工作方式。所有能够被访问的对象必须实现接口Acceptable 的 accept方法：
+
+	public interface Acceptable {
+		public void accept(Visitor v);
+	}
+
+而类Visitor则规定了针对每个可访问对象的访问动作：
+
+	public interface Visitor {
+		// expressions
+		public void visit(Add e);
+
+		public void visit(And e);
+
+		public void visit(ArraySelect e);
+
+		public void visit(Call e);
+
+		public void visit(False e);
+
+		...
+	}
+
+所有能背访问的对象用如下的方式实现accept方法，只需要负责调用visit方法，并且以自己作为参数：
+
+	public static class Type {
+		public static abstract class T implements ast.Acceptable {
+			// boolean: -1
+			// int: 0
+			// int[]: 1
+			// class: 2
+			// Such that one can easily tell who is who
+			public abstract int getNum();
+		}
+
+		// boolean
+		public static class Boolean extends T {
+			...
+			@Override
+			public void accept(Visitor v) {
+				v.visit(this);
+			}
+			...
+		}
+
+		// class
+		public static class ClassType extends T {
+			public String id;
+			...
+			@Override
+			public void accept(Visitor v) {
+				v.visit(this);
+			}
+			...
+		}
+
+		// int
+		public static class Int extends T {
+			...
+			@Override
+			public void accept(Visitor v) {
+				v.visit(this);
+			}
+			...
+		}
+
+
+PrettyPrintVisitor类用来打印还原source code，所以它实现借口interface，并且作为AST对象的accept方法的参数
+
+----------------------------------------------------------------------------------------------------------------------
+
+Exercise 5. Modfity the parser src.parser.Parser.java to add semantic actions to each parsing method. There is hooking code in src.Main.java which will call the new parser and to pretty print the parsing result (abstract syntax tree).
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. 修改Parser，在完成递归下降算法的过程中，生成AST：
+1）生成的规则是按照特定语言的推导式进行的，需要注意的是，在推导特定推导式时，并不一定会生成对应的元素。比如在推导与运算、比较运算、算数运算等的过程中，并不一定会生成相应的对象，在缺少对应的运算符时，应该返回下一级的对象作为结果，以比较和与运算为例，注意“case 1” 的情况：
+
+	// AndExp -> LtExp < LtExp
+	// -> LtExp
+	private Ast.Exp.T parseAndExp() {
+		ArrayList<Ast.Exp.T> lts = new ArrayList<Ast.Exp.T>();
+
+		lts.add(parseLtExp());
+		while (current.kind == Kind.TOKEN_LT) {
+			advance();
+			lts.add(parseLtExp());
+		}
+
+		return cstLt(lts);
+	}
+
+	// LtExp < LtExp < ltExp ...
+	private Ast.Exp.T cstLt(ArrayList<Ast.Exp.T> lts) {
+		int size = lts.size();
+		
+		switch (size) {
+		case 0:
+			return null;
+		case 1:
+			return lts.get(0);
+		case 2:
+			return new Ast.Exp.Lt(lts.get(0), lts.get(1));
+		default:
+			return new Ast.Exp.Lt(lts.remove(0), cstLt(lts));
+		}
+	}
+
+	// Exp -> AndExp && AndExp
+	// -> AndExp
+	private Ast.Exp.T parseExp() {
+		ArrayList<Ast.Exp.T> ands = new ArrayList<Ast.Exp.T>();
+		
+		ands.add(parseAndExp());
+		while (current.kind == Kind.TOKEN_AND) {
+			advance();
+			ands.add(parseAndExp());
+		}
+
+		return cstAnd(ands);
+	}
+
+	// andExp && AndExp && AndExp ...
+	private Ast.Exp.T cstAnd(ArrayList<Ast.Exp.T> ands) {
+		int size = ands.size();
+		
+		switch (size) {
+		case 0:
+			return null;
+		case 1:
+			return ands.get(0);
+		case 2:
+			return new Ast.Exp.And(ands.get(0), ands.get(1));
+		default:
+			return new Ast.Exp.And(ands.remove(0), cstAnd(ands));
+		}
+	}
+
+
+2）在Ast.java 中增加关于推断是AtomExp -> (Exp) 的类，并且增加相应的parser 和 prettyprint
+如果缺少了这个推导式，那么表达式的优先级将会不正确
+
+
+----------------------------------------------------------------------------------------------------------------------
+Symbol Tables
+
+Exercise  6. Read the code in src.elaborator.ClassTable.java for the data structure defining the class table. And read the code in src.elaborator.MethodTable.java for the data structure defining the method table. Draw figures about the organization of these tables.
+
+It's often the case that one need to dump the content the class table or method table after they have been created, to make sure that they contain everything one need. Now finish the methods dump() in both the two table classes for this purpose. Make sure that your Tiger compiler compiles with:
+
+  $ java -cp bin Tiger -elab classTable -elab methodTable <inputFile>
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. 给出了class 和 method 的基本符号表， 要求实现classTable 和 methodTable的dump方法，目的是打印信息，方便查看
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------
+Elaboration Rules
+The elaboration (type checking) is a post-order traversal of the abstract syntax tree. For sub-trees, the elaborator returns the type of that sub-tree; and for root-node, the elaborator compares the types returned from the sub-trees and guarantee the sub-tree types can be combined in some proper way
+
+Exercise 7. Finish the code in the elaborator src.elaborator.ElaboratorVisitor.java by filling the methods which have empty bodies. You may want to refer to the Java specification when necessary. But pay special attention to the minor differences between Java and MiniJava, say overloading is not allowed in MiniJava.
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. 该联系的主要工作是做类型推导，主要是检查表达式的类型是否匹配
+
+
+	MainClass.MainClassSingle c: 推导 c.stm
+
+	Class.ClassSingle c: c.methods
+
+	Method.MethodSingle m: m.stms, m.retExp
+
+	Dec.DecSingle d: 定义在类型推导中不会被访问到
+
+
+	//stm
+	While / If s: s.contiton 的类型为boolean
+
+	Print s: s.exp 的类型为 int
+
+	AssignArray ArraySelect s: s.index、s.exp 为int，s.id存在并且为int[]
+
+	Assign s: s.id 存在, 并且 s.id s.exp 的类型一致,  如果是ClassType需要考虑继承关系
+
+
+
+	//exp
+	Not s: s.exp 为bool
+		
+	And s: s.left s.right this.type 为bool
+
+	Lt s: s.left、s.right类型相同， this.type为bool
+
+	Add Sub Times s: s.left、s.right 必须为int； this.type为int
+
+	NewObject NewIntArray s:  tihs.type为对应的type
+
+	ArraySelect s: s.array 为 int[]; s.index 为 int
+
+	True False Num s: this.type 为bool
+
+	Length s: s.array 为 int, this.type 为int
+
+	Id s: 查找s是否在类中或方法中，并且更新到this.type
+	
+	Call c:
+		1. 必须为类方法调用
+		2. 检查方法的签名和调用传入的参数是否一致
+			基本的类型有 Boolean Int IntArray ClassType， 其中ClassType的检查需要考虑继承关系
+		3. 更新返回值和参数列表的类型到C中， 并且this.type为范围值的类型
+
+
+	// type
+	type 不会被visit到
+
+	// dec
+	dec 不会被visit到
+
+
+2. 测试，在注释掉MethodTable、ClassTable的重复定义检查之后，通过测试
+
+
+----------------------------------------------------------------------------------------------------------------------
+Error Handling Recovery
+
+Exercise 8. Modify the error reporting method error() in src.elaborator.ElaboratorVisitor.java to enable it to generate more informative error message about the error. And also modify it to generate all errors in the compiled programs, not just the first one.
+
+----------------------------------------------------------------------------------------------------------------------
+
+1. 使得tiger类型检查中将所有可能的错误都列出来，我暂时的做法是在错误的时候不退出。
+
+
+----------------------------------------------------------------------------------------------------------------------
+Declaration Site and Use Sites
+
+Like many other language, Java obeys a declaration-before-use rule, which simply means that for each variable in the program, there should be one and only one declaration site for that variable. However, it's not true for the vice versa: for one variable declaration, there may be zero or more number of uses of that variable; if the number of the uses is zero, then there is the chance of locating an unused variable. A good compiler may generate some error message like this one:
+  Warning: variable "x" declared at line 10 never used
+just as what your Eclipse has always been generating for your Java code.
+
+Exercise 9. Modify your Tiger compiler to emit warning messages like the one above.
+
+----------------------------------------------------------------------------------------------------------------------
+TODO:
+
+1.  变量的使用： 检查是否存在未声明的变量
+	minijava只在method中才会存在变量的使用，变量的声明在类的开始部分和方法的开始部分，并且在类型检查的时候，都会检查每个变量是否存在， 查找的顺序是先检查方法再检查类，分别用到ClassTable 和  mehtodTable
+
+2.  变量的使用： 声明了未使用的变量
+	方法中的变量：我们在检查每个方法的时候，记录已经使用过的变量，在结束完方法的检查之后，再判断是否有未使用的变量
+	类中的变量:从类的角度去考虑
+
+3. 增加行号信息 之前ast不存在行号信息，如何增加?
+
+
+TODO ：
+1. 如何正确区分类中的变量和方法中的变量，比如this.a 怎么去认定他是类中的方法，如果类和方法中同事存在这两个变量

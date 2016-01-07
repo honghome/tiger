@@ -1,7 +1,6 @@
 package elaborator;
 
 import ast.Ast.Type;
-import util.Todo;
 
 public class ClassTable {
 	// map each class name (a string), to the class bindings.
@@ -73,7 +72,18 @@ public class ClassTable {
 	}
 
 	public void dump() {
-		new Todo();
+		java.util.Set<String> set = this.table.keySet();
+		java.util.Iterator<String> it = set.iterator();
+
+		while (it.hasNext()) {
+			String key = it.next();
+			ClassBinding val = this.table.get(key);
+
+			System.out.println(">>class name: " + key);
+			System.out.println(">>class content:");
+			val.toString();
+			System.out.println("\n\n");
+		}
 	}
 
 	@Override
