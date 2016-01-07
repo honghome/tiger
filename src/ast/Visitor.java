@@ -66,7 +66,7 @@ public interface Visitor {
 	public void visit(Times e);
 
 	public void visit(True e);
-	
+
 	public void visit(ExpBlock e);
 
 	// statements

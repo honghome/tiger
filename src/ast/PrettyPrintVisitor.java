@@ -193,7 +193,7 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say("true");
 		return;
 	}
-	
+
 	@Override
 	public void visit(ExpBlock e) {
 		this.say("(");
@@ -225,7 +225,7 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(Block s) {
-		for(Ast.Stm.T stm : s.stms) {
+		for (Ast.Stm.T stm : s.stms) {
 			stm.accept(this);
 		}
 		return;
